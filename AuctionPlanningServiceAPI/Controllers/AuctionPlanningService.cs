@@ -91,7 +91,7 @@ public class AuctionPlanningServiceController : ControllerBase
         }
     }
 
-    //POST - Adds a new article
+    //POST - Adds a new auction
     [HttpPost("addAuction")]
     public async Task<IActionResult> AddAuction(AuctionDTO auctionDTO)
     {
@@ -138,6 +138,32 @@ public class AuctionPlanningServiceController : ControllerBase
 
     }
 
+    //DELETE - Removes an auction
+    [HttpDelete("deleteAuction/{id}")]
+    public async Task<IActionResult> DeleteAuction(string id)
+    {
+        try
+        {
+            _logger.LogInformation($"DELETE auction kaldt med id: {id}");
+
+            Auction deleteAuction = new Auction();
+
+            deleteAuction = await _auctionCollection.Find(x => x.AuctionID == id).FirstAsync<Auction>();
+
+            FilterDefinition<Auction> filter = Builders<Auction>.Filter.Eq("AuctionID", id);
+
+            await _auctionCollection.DeleteOneAsync(filter);
+
+            return Ok(deleteAuction);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Fejl ved deleteAuction: {ex.Message}");
+
+            throw;
+        }
+
+    }
 
 }
 
