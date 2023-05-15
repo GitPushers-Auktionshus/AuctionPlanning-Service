@@ -8,142 +8,115 @@ using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.Extensions.Configuration;
-using AuctionPlanningServiceAPI;
+using static System.Net.Mime.MediaTypeNames;
+using MongoDB.Driver;
+using AuctionPlanningServiceAPI.Model;
+using MongoDB.Bson;
 
 namespace AuctionPlanningServiceAPI.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class AuctionPlanningServiceAPI : ControllerBase
+public class AuctionPlanningServiceController : ControllerBase
 {
-    private readonly ILogger<AuctionPlanningServiceAPI> _logger;
-    private readonly string _filePath;
-    private readonly string _hostName;
+    private readonly ILogger<AuctionPlanningServiceController> _logger;
 
-    public AuctionPlanningServiceAPI(ILogger<AuctionPlanningServiceAPI> logger, IConfiguration config)
+    private readonly string _secret;
+    private readonly string _issuer;
+    private readonly string _connectionURI;
+
+    private readonly string _auctionDatabase;
+    private readonly string _auctionsDatabase;
+
+    private readonly string _inventoryDatabase;
+
+    private readonly string _auctionCollectionName;
+
+    private readonly string _articleCollectionName;
+
+
+    private readonly IMongoCollection<Auction> _auctionCollection;
+    private readonly IMongoCollection<Article> _articleCollection;
+    private readonly IConfiguration _config;
+
+    public AuctionPlanningServiceController(ILogger<AuctionPlanningServiceController> logger, IConfiguration config)
     {
         _logger = logger;
-        // Henter miljø variabel "FilePath" og "HostnameRabbit" fra docker-compose
-        _filePath = config["FilePath"] ?? "/srv";
-        //_logger.LogInformation("FilePath er sat til: [$_filePath]"); virker måske
-        _hostName = config["HostnameRabbit"];
+        _config = config;
 
-        _logger.LogInformation($"Filepath: {_filePath}");
-        _logger.LogInformation($"Connection: {_hostName}");
+        _secret = config["Secret"] ?? "Secret missing";
+        _issuer = config["Issuer"] ?? "Issue'er missing";
+        _connectionURI = config["ConnectionURI"] ?? "ConnectionURI missing";
 
-        var hostName = System.Net.Dns.GetHostName();
-        var ips = System.Net.Dns.GetHostAddresses(hostName);
-        var _ipaddr = ips.First().MapToIPv4().ToString();
-        _logger.LogInformation(1, $"Auction responding from {_ipaddr}");
+        /*
+        // Auction database and collections
+        _auctionsDatabase = config["AuctionsDatabase"] ?? "Auctionsdatabase missing";
+        _auctionCollectionName = config["AuctionCollection"] ?? "Auctioncollection name missing";
+
+
+        // Inventory database and collection
+        _inventoryDatabase = config["InventoryDatabase"] ?? "Inventorydatabase missing";
+        _articleCollectionName = config["ArticleCollection"] ?? "Articlecollection name missing";
+
+        _logger.LogInformation($"AuctionService secrets: ConnectionURI: {_connectionURI}");
+        _logger.LogInformation($"AuctionService Database and Collections: Auctiondatabase: {_auctionsDatabase}, Auctionsdatabase: {_auctionsDatabase}");
+        */
+
+        _inventoryDatabase = "inventoryDatabase";
+        _articleCollectionName = "article";
+
+        _auctionsDatabase = "auctionsDatabase";
+        _auctionCollectionName = "Auction";
+
+        try
+        {
+            // Client
+            var mongoClient = new MongoClient(_connectionURI);
+
+            // Databases
+            var auctionsDatabase = mongoClient.GetDatabase(_auctionsDatabase);
+            var inventoryDatabase = mongoClient.GetDatabase(_inventoryDatabase);
+
+            // Collections
+            _auctionCollection = auctionsDatabase.GetCollection<Auction>(_auctionCollectionName);
+            _articleCollection = inventoryDatabase.GetCollection<Article>(_articleCollectionName);
+
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error trying to connect to database: {ex.Message}");
+            throw;
+        }
     }
 
-    // Opretter en AuctionDTO
-    [Authorize]
-    [HttpPost("opretbooking")]
-    public IActionResult OpretBooking(AuctionDTO auctionDTO)
+    //POST - Adds a new article
+    [HttpPost("addAuction")]
+    public async Task<IActionResult> AddAuction(AuctionDTO auctionDTO)
     {
-        AuctionDTO auctionDTO = new AuctionDTO
+        _logger.LogInformation($"POST: addAuction kaldt, HighestBid: {auctionDTO.HighestBid}, BidCounter: {auctionDTO.BidCounter}, StartDate: {auctionDTO.StartDate}, EndDate: {auctionDTO.EndDate}, Views: {auctionDTO.Views}, ArticleID: {auctionDTO.ArticleID}");
+
+
+        Auction auction = new Auction
         {
-            AuctionID = auctionDTO.AuctionID,
+            AuctionID = ObjectId.GenerateNewId().ToString(),
             HighestBid = auctionDTO.HighestBid,
             BidCounter = auctionDTO.BidCounter,
             StartDate = auctionDTO.StartDate,
             EndDate = auctionDTO.EndDate,
             Views = auctionDTO.Views,
-            ArticleID = auctionDTO.ArticleID
+            ArticleID = auctionDTO.ArticleID,
+            AuctionList = new List<Auction>(),
         };
 
-        try
-        {
-            //Opretter forbindelse til RabbitMQ
-            var factory = new ConnectionFactory
-            {
-                HostName = _hostName
-            };
 
-            using var connection = factory.CreateConnection();
-            using var channel = connection.CreateModel();
+        await _auctionCollection.InsertOneAsync(auction);
 
-            channel.ExchangeDeclare(exchange: "AuctionService", type: ExchangeType.Topic);
-
-            // Opretter en kø "hello" hvis den ikke allerede findes i vores rabbitmq-server
-            //channel.QueueDeclare(queue: "hello",
-            //                     durable: false,
-            //                     exclusive: false,
-            //                     autoDelete: false,
-            //                     arguments: null);
-
-            // Serialiseres til JSON
-            string message = JsonSerializer.Serialize(auctionDTO);
-
-            // Konverteres til byte-array
-            var body = Encoding.UTF8.GetBytes(message);
-
-            // Sendes til hello-køen
-            channel.BasicPublish(exchange: "AuctionService",
-                                 routingKey: "AuctionDTO",
-                                 basicProperties: null,
-                                 body: body);
-
-
-            _logger.LogInformation("AuctionDTO oprettet");
-
-            Console.WriteLine($"[*] Auction sendt:\n\tAuctionID: {auctionDTO.AuctionID}\n\tHighestBid: {auctionDTO.HighestBid}\n\tBidCounter: {auctionDTO.BidCounter}\n\tStartDate: {auctionDTO.StartDate}\n\tEndDate: {auctionDTO.EndDate}\n\tViews: {auctionDTO.Views}\n\tArticleID: {auctionDTO.ArticleID}");
-
-        }
-
-        catch (Exception ex)
-        {
-            _logger.LogError(ex.Message);
-            return StatusCode(500);
-        }
-        return Ok(auctionDTO);
-
+        return Ok(auction);
     }
 
-    // Henter CSV-fil
-    [Authorize]
-    [HttpGet("modtag")]
-    public async Task<IActionResult> ModtagAuctionDTO()
-    {
-        try
-        {
-            //Læser indholdet af CSV-fil fra filsti (_filePath)
-            var bytes = await System.IO.File.ReadAllBytesAsync(Path.Combine(_filePath, "AuktionsListe.csv"));
-
-            _logger.LogInformation("AuktionsListe.csv fil modtaget");
-
-            // Returnere CSV-filen med indholdet
-            return File(bytes, "text/csv", Path.GetFileName(Path.Combine(_filePath, "AuktionsListe.csv")));
-
-        }
-
-        catch (Exception ex)
-        {
-            _logger.LogError(ex.Message);
-            return StatusCode(500);
-        }
-
-    }
-
-
-    [Authorize]
-    [HttpGet("version")]
-    public IEnumerable<string> Get()
-    {
-        var properties = new List<string>();
-        var assembly = typeof(Program).Assembly;
-        foreach (var attribute in assembly.GetCustomAttributesData())
-        {
-            properties.Add($"{attribute.AttributeType.Name} - {attribute.ToString()}");
-            _logger.LogInformation("Version blevet kaldt");
-        }
-        return properties;
-
-    }
 
 }
-
 
 
 
