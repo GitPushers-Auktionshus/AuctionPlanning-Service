@@ -37,6 +37,7 @@ public class AuctionPlanningServiceController : ControllerBase
 
     private readonly IMongoCollection<Auction> _auctionCollection;
     private readonly IMongoCollection<Article> _articleCollection;
+
     private readonly IConfiguration _config;
 
     public AuctionPlanningServiceController(ILogger<AuctionPlanningServiceController> logger, IConfiguration config)
@@ -106,13 +107,35 @@ public class AuctionPlanningServiceController : ControllerBase
             EndDate = auctionDTO.EndDate,
             Views = auctionDTO.Views,
             ArticleID = auctionDTO.ArticleID,
-            AuctionList = new List<Auction>(),
         };
 
 
         await _auctionCollection.InsertOneAsync(auction);
 
         return Ok(auction);
+    }
+
+    //GET - Return a list of all auctions
+    [HttpGet("getAll")]
+    public async Task<IActionResult> GetAllAuctions()
+    {
+        _logger.LogInformation($"getAll endpoint kaldt");
+
+        try
+        {
+            List<Auction> allAuctions = new List<Auction>();
+
+            allAuctions = await _auctionCollection.Find(_ => true).ToListAsync<Auction>();
+
+            return Ok(allAuctions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Fejl ved getAllAuctions: {ex.Message}");
+
+            throw;
+        }
+
     }
 
 
