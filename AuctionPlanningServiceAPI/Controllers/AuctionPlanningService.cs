@@ -63,12 +63,17 @@ public class AuctionPlanningServiceController : ControllerBase
         _logger.LogInformation($"AuctionService Database and Collections: Auctiondatabase: {_auctionsDatabase}, Auctionsdatabase: {_auctionsDatabase}");
         */
 
-        _inventoryDatabase = "inventoryDatabase";
-        _articleCollectionName = "article";
-
+        //Auction database and collections
         _auctionsDatabase = "auctionsDatabase";
         _auctionCollectionName = "Auction";
 
+        //Inventory database and collection
+        _inventoryDatabase = "inventoryDatabase";
+        _articleCollectionName = "article";
+
+
+        _logger.LogInformation($"AuctionService secrets: ConnectionURI: {_connectionURI}");
+        _logger.LogInformation($"AuctionService Database and Collections: Auctiondatabase: {_auctionsDatabase}, Auctionsdatabase: {_auctionsDatabase}");
         try
         {
             // Client
@@ -95,7 +100,7 @@ public class AuctionPlanningServiceController : ControllerBase
     [HttpPost("addAuction")]
     public async Task<IActionResult> AddAuction(AuctionDTO auctionDTO)
     {
-        _logger.LogInformation($"POST: addAuction kaldt, HighestBid: {auctionDTO.HighestBid}, BidCounter: {auctionDTO.BidCounter}, StartDate: {auctionDTO.StartDate}, EndDate: {auctionDTO.EndDate}, Views: {auctionDTO.Views}, ArticleID: {auctionDTO.ArticleID}");
+        _logger.LogInformation($"POST: addAuction called, HighestBid: {auctionDTO.HighestBid}, BidCounter: {auctionDTO.BidCounter}, StartDate: {auctionDTO.StartDate}, EndDate: {auctionDTO.EndDate}, Views: {auctionDTO.Views}, ArticleID: {auctionDTO.ArticleID}");
 
 
         Auction auction = new Auction
@@ -119,7 +124,7 @@ public class AuctionPlanningServiceController : ControllerBase
     [HttpGet("getAll")]
     public async Task<IActionResult> GetAllAuctions()
     {
-        _logger.LogInformation($"getAll endpoint kaldt");
+        _logger.LogInformation($"getAll endpoint called");
 
         try
         {
@@ -131,7 +136,7 @@ public class AuctionPlanningServiceController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Fejl ved getAllAuctions: {ex.Message}");
+            _logger.LogError($"Failed calling getAllAuctions: {ex.Message}");
 
             throw;
         }
@@ -144,7 +149,7 @@ public class AuctionPlanningServiceController : ControllerBase
     {
         try
         {
-            _logger.LogInformation($"DELETE auction kaldt med id: {id}");
+            _logger.LogInformation($"DELETE auction called with id: {id}");
 
             Auction deleteAuction = new Auction();
 
@@ -154,11 +159,14 @@ public class AuctionPlanningServiceController : ControllerBase
 
             await _auctionCollection.DeleteOneAsync(filter);
 
+            _logger.LogInformation($"id got deleted: {id}");
+
             return Ok(deleteAuction);
+
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Fejl ved deleteAuction: {ex.Message}");
+            _logger.LogError($"Failed while trying to deleteAuction: {ex.Message}");
 
             throw;
         }
@@ -179,7 +187,7 @@ public class AuctionPlanningServiceController : ControllerBase
             {
                 return NotFound();
             }
-
+            _logger.LogInformation($"id called as: {id}");
             return Ok(auction);
         }
         catch (Exception ex)
@@ -214,6 +222,8 @@ public class AuctionPlanningServiceController : ControllerBase
 
             // Replace the existing auction in the database with the updated auction
             await _auctionCollection.ReplaceOneAsync(x => x.AuctionID == id, existingAuction);
+
+            _logger.LogInformation($"Updated auction called with ID: {id}");
 
             return Ok(existingAuction);
         }
