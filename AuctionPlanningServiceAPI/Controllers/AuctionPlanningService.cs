@@ -165,6 +165,66 @@ public class AuctionPlanningServiceController : ControllerBase
 
     }
 
+    // GET - Retrieves an auction by ID
+    [HttpGet("getAuction/{id}")]
+    public async Task<IActionResult> GetAuction(string id)
+    {
+        try
+        {
+            _logger.LogInformation($"GET auction called with ID: {id}");
+
+            Auction auction = await _auctionCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
+
+            if (auction == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(auction);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error in getAuction: {ex.Message}");
+            throw;
+        }
+    }
+
+    // PUT - Updates an auction
+    [HttpPut("updateAuction/{id}")]
+    public async Task<IActionResult> UpdateAuction(string id, AuctionDTO auctionDTO)
+    {
+        try
+        {
+            _logger.LogInformation($"PUT auction called with ID: {id}");
+
+            Auction existingAuction = await _auctionCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
+
+            if (existingAuction == null)
+            {
+                return NotFound();
+            }
+
+            // Update the properties of the existing auction with the values from the DTO
+            existingAuction.HighestBid = auctionDTO.HighestBid;
+            existingAuction.BidCounter = auctionDTO.BidCounter;
+            existingAuction.StartDate = auctionDTO.StartDate;
+            existingAuction.EndDate = auctionDTO.EndDate;
+            existingAuction.Views = auctionDTO.Views;
+            existingAuction.ArticleID = auctionDTO.ArticleID;
+
+            // Replace the existing auction in the database with the updated auction
+            await _auctionCollection.ReplaceOneAsync(x => x.AuctionID == id, existingAuction);
+
+            return Ok(existingAuction);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error in updateAuction: {ex.Message}");
+            throw;
+        }
+    }
+
+
 }
 
 
