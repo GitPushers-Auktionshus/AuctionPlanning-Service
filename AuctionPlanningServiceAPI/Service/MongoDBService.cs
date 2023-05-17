@@ -63,8 +63,8 @@ namespace AuctionPlanningServiceAPI.Service
             _connectionURI = "mongodb://admin:1234@localhost:27018/";
 
             //Auction database and collections
-            _auctionsDatabase = "auctionsDatabase";
-            _auctionCollectionName = "Auction";
+            _auctionsDatabase = "Auctions";
+            _auctionCollectionName = "listings";
 
             //Inventory database and collection
             _inventoryDatabase = "inventoryDatabase";
@@ -72,7 +72,7 @@ namespace AuctionPlanningServiceAPI.Service
 
 
             _logger.LogInformation($"AuctionService secrets: ConnectionURI: {_connectionURI}");
-            _logger.LogInformation($"AuctionService Database and Collections: Auctiondatabase: {_auctionsDatabase}, Auctionsdatabase: {_auctionsDatabase}");
+            _logger.LogInformation($"AuctionService Database and Collections: Auctions: {_auctionsDatabase}, Auctions: {_auctionsDatabase}");
             try
             {
                 // Sets MongoDB client
