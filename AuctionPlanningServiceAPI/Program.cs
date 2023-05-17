@@ -1,5 +1,6 @@
 using NLog;
 using NLog.Web;
+using AuctionPlanningServiceAPI.Service;
 
 // Sets up NLog as default loggingtool 
 var logger = NLog.LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -10,6 +11,7 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
+    builder.Services.AddSingleton<IAuctionPlanningRepository, MongoDBService>();
 
     // Add services to the container.
     builder.Services.AddControllers();

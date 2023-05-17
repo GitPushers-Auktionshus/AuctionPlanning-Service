@@ -26,9 +26,11 @@
      <None Include="NLog.config">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+     <None Remove="Service\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Controllers\" />
     <Folder Include="Model\" />
+    <Folder Include="Service\" />
   </ItemGroup>
 </Project>
