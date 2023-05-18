@@ -2,31 +2,28 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text;
-using RabbitMQ.Client;
 using System.Net;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.Extensions.Configuration;
 using static System.Net.Mime.MediaTypeNames;
-using MongoDB.Driver;
 using AuctionPlanningServiceAPI.Model;
-using MongoDB.Bson;
 using AuctionPlanningServiceAPI.Service;
 
 namespace AuctionPlanningServiceAPI.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class AuctionPlanningServiceController : ControllerBase
+public class AuctionPlanningController : ControllerBase
 {
-    private readonly ILogger<AuctionPlanningServiceController> _logger;
+    private readonly ILogger<AuctionPlanningController> _logger;
 
     private readonly IConfiguration _config;
 
     private readonly IAuctionPlanningRepository _service;
 
-    public AuctionPlanningServiceController(ILogger<AuctionPlanningServiceController> logger, IConfiguration config, IAuctionPlanningRepository service)
+    public AuctionPlanningController(ILogger<AuctionPlanningController> logger, IConfiguration config, IAuctionPlanningRepository service)
     {
         _logger = logger;
         _config = config;
@@ -34,6 +31,7 @@ public class AuctionPlanningServiceController : ControllerBase
     }
 
     //POST - Adds a new auction
+    [Authorize]
     [HttpPost("addAuction")]
     public async Task<Auction> AddAuction(AuctionDTO auctionDTO)
     {
@@ -48,6 +46,7 @@ public class AuctionPlanningServiceController : ControllerBase
     }
 
     //DELETE - Removes an auction
+    [Authorize]
     [HttpDelete("deleteAuction/{id}")]
     public async Task<Auction> DeleteAuction(string id)
     {
@@ -62,6 +61,7 @@ public class AuctionPlanningServiceController : ControllerBase
     }
 
     // PUT - Updates an auction
+    [Authorize]
     [HttpPut("updateAuction/{id}")]
     public async Task<Auction> UpdateAuction(string id, AuctionDTO auctionDTO)
     {
