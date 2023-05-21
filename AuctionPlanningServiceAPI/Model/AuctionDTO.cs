@@ -12,7 +12,7 @@ namespace AuctionPlanningServiceAPI.Model
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public int Views { get; set; }
-        public int ArticleID { get; set; }
+        public string ArticleID { get; set; }
 
         public AuctionDTO()
         {

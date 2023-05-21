@@ -15,8 +15,8 @@ namespace AuctionPlanningServiceAPI.Model
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public int Views { get; set; }
-        public int ArticleID { get; set; }
-        public Auction(string auctionID, int highestBid, int bidCounter, DateTime startDate, DateTime endDate, int views, int articleID)
+        public string ArticleID { get; set; }
+        public Auction(string auctionID, int highestBid, int bidCounter, DateTime startDate, DateTime endDate, int views, string articleID)
         {
             this.AuctionID = auctionID;
             this.HighestBid = highestBid;

@@ -15,11 +15,11 @@ namespace AuctionPlanningServiceAPI.Service
 
     {
         private readonly ILogger<AuctionPlanningServiceController> _logger;
+
         private readonly IConfiguration _config;
 
         private readonly string _connectionURI;
 
-        private readonly string _auctionDatabase;
         private readonly string _auctionsDatabase;
 
         private readonly string _inventoryDatabase;
@@ -27,7 +27,6 @@ namespace AuctionPlanningServiceAPI.Service
         private readonly string _auctionCollectionName;
 
         private readonly string _articleCollectionName;
-
 
         private readonly IMongoCollection<Auction> _auctionCollection;
         private readonly IMongoCollection<Article> _articleCollection;
@@ -39,23 +38,23 @@ namespace AuctionPlanningServiceAPI.Service
 
             try
             {
-                /*
-            // Auction database and collections
-            _auctionsDatabase = config["AuctionsDatabase"] ?? "Auctionsdatabase missing";
-            _auctionCollectionName = config["AuctionCollection"] ?? "Auctioncollection name missing";
+        
+            // // Auction database and collections
+            // _auctionsDatabase = config["AuctionsDatabase"] ?? "Auctionsdatabase missing";
+            // _auctionCollectionName = config["AuctionCollection"] ?? "Auctioncollection name missing";
 
 
-            // Inventory database and collection
-            _inventoryDatabase = config["InventoryDatabase"] ?? "Inventorydatabase missing";
-            _articleCollectionName = config["ArticleCollection"] ?? "Articlecollection name missing";
+            // // Inventory database and collection
+            // _inventoryDatabase = config["InventoryDatabase"] ?? "Inventorydatabase missing";
+            // _articleCollectionName = config["ArticleCollection"] ?? "Articlecollection name missing";
 
-            _logger.LogInformation($"AuctionService secrets: ConnectionURI: {_connectionURI}");
-            _logger.LogInformation($"AuctionService Database and Collections: Auctiondatabase: {_auctionsDatabase}, Auctionsdatabase: {_auctionsDatabase}");
-            */
+            // _logger.LogInformation($"AuctionService secrets: ConnectionURI: {_connectionURI}");
+            // _logger.LogInformation($"AuctionService Database and Collections: Auctiondatabase: {_auctionsDatabase}, Auctionsdatabase: {_auctionsDatabase}");
+
             }
             catch (Exception ex)
             {
-                _logger.LogError("Error retrieving enviroment variables");
+                _logger.LogError("Error retrieving environment variables");
 
                 throw;
             }
@@ -70,27 +69,33 @@ namespace AuctionPlanningServiceAPI.Service
             _inventoryDatabase = "inventoryDatabase";
             _articleCollectionName = "article";
 
-
-            _logger.LogInformation($"AuctionService secrets: ConnectionURI: {_connectionURI}");
-            _logger.LogInformation($"AuctionService Database and Collections: Auctions: {_auctionsDatabase}, Auctions: {_auctionsDatabase}");
             try
             {
                 // Sets MongoDB client
                 var mongoClient = new MongoClient(_connectionURI);
+                _logger.LogInformation($"[*] CONNECTION_URI: {_connectionURI}");
+
 
                 // Sets MongoDB Database
                 var auctionsDatabase = mongoClient.GetDatabase(_auctionsDatabase);
+                _logger.LogInformation($"[*] DATABASE: {_auctionsDatabase}");
+
                 var inventoryDatabase = mongoClient.GetDatabase(_inventoryDatabase);
+                _logger.LogInformation($"[*] DATABASE: {_inventoryDatabase}");
+
 
                 // Collections
                 _auctionCollection = auctionsDatabase.GetCollection<Auction>(_auctionCollectionName);
-                _articleCollection = inventoryDatabase.GetCollection<Article>(_articleCollectionName);
+                _logger.LogInformation($"[*] COLLECTION: {_auctionCollectionName}");
 
+                _articleCollection = inventoryDatabase.GetCollection<Article>(_articleCollectionName);
+                _logger.LogInformation($"[*] COLLECTION: {_articleCollectionName}");
 
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error trying to connect to database: {ex.Message}");
+
                 throw;
             }
         }
@@ -100,8 +105,7 @@ namespace AuctionPlanningServiceAPI.Service
         {
             try
             {
-                _logger.LogInformation($"POST: addAuction called, HighestBid: {auctionDTO.HighestBid}, BidCounter: {auctionDTO.BidCounter}, StartDate: {auctionDTO.StartDate}, EndDate: {auctionDTO.EndDate}, Views: {auctionDTO.Views}, ArticleID: {auctionDTO.ArticleID}");
-
+                _logger.LogInformation($"[*]: AddAuction(AuctionDTO auctionDTO) called: Adding a new auction instance to the database.\nHighestBid: {auctionDTO.HighestBid}\nBidCounter: {auctionDTO.BidCounter}\nStartDate: {auctionDTO.StartDate}\nEndDate: {auctionDTO.EndDate}\nViews: {auctionDTO.Views}\nArticleID: {auctionDTO.ArticleID}");
 
                 Auction auction = new Auction
                 {
@@ -120,7 +124,7 @@ namespace AuctionPlanningServiceAPI.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error auction: {ex.Message}");
+                _logger.LogError($"EXCEPTION CAUGHT: {ex.Message}");
 
                 throw;
             }
@@ -128,7 +132,7 @@ namespace AuctionPlanningServiceAPI.Service
         //GET - Return a list of all auctions
         public async Task<List<Auction>> GetAllAuctions()
         {
-            _logger.LogInformation($"getAll endpoint called");
+            _logger.LogInformation($"[*] GettAllAuctions() called: Fetching all auctions in the database");
 
             try
             {
@@ -140,35 +144,35 @@ namespace AuctionPlanningServiceAPI.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed calling getAllAuctions: {ex.Message}");
+                _logger.LogError($"EXCEPTION CAUGHT: {ex.Message}");
 
                 throw;
             }
 
         }
         //DELETE - Removes an auction
-        public async Task<Auction> DeleteAuction(string id)
+        public async Task<Auction> DeleteAuction(string auctionId)
         {
-            _logger.LogInformation($"DeleteAuction called with Auction ID = {id}");
+            _logger.LogInformation($"[*] DeleteAuction(string auctionId) called: Deleting auction in the database with auctionId {auctionId}");
 
             try
             {
                 Auction deleteAuction = new Auction();
 
-                deleteAuction = await _auctionCollection.Find(x => x.AuctionID == id).FirstAsync<Auction>();
+                deleteAuction = await _auctionCollection.Find(x => x.AuctionID == auctionId).FirstAsync<Auction>();
 
-                FilterDefinition<Auction> filter = Builders<Auction>.Filter.Eq("AuctionID", id);
+                FilterDefinition<Auction> filter = Builders<Auction>.Filter.Eq("AuctionID", auctionId);
 
                 await _auctionCollection.DeleteOneAsync(filter);
 
-                _logger.LogInformation($"id got deleted: {id}");
+                _logger.LogInformation($"Auction with id {auctionId} got deleted");
 
                 return deleteAuction;
 
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed while trying to deleteAuction: {ex.Message}");
+                _logger.LogError($"EXCEPTION CAUGHT: {ex.Message}");
 
                 throw;
             }
@@ -176,26 +180,25 @@ namespace AuctionPlanningServiceAPI.Service
         }
 
         // GET - Retrieves an auction by ID
-        public async Task<Auction> GetAuctionByID(string id)
+        public async Task<Auction> GetAuctionByID(string auctionId)
         {
-           
+            _logger.LogInformation($"[*] GetAuctionByID(string auctionId) called: Fetching auction information from auctionId {auctionId}");
+
             try
             {
-
-                _logger.LogInformation($"GET auction called with ID: {id}");
-
-                Auction auction = await _auctionCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
+                Auction auction = await _auctionCollection.Find(x => x.AuctionID == auctionId).FirstOrDefaultAsync();
 
                 if (auction == null)
                 {
-                    _logger.LogError($"Error finding auction: {id}");
+                    _logger.LogError($"Error finding auction: {auctionId}");
                 }
-                _logger.LogInformation($"id called as: {id}");
+
                 return auction;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error in getAuction: {ex.Message}");
+                _logger.LogError($"EXCEPTION CAUGHT: {ex.Message}");
+
                 throw;
             }
         }
@@ -203,17 +206,17 @@ namespace AuctionPlanningServiceAPI.Service
 
 
         // PUT - Updates an auction
-        public async Task<Auction> UpdateAuction(string id, AuctionDTO auctionDTO)
+        public async Task<Auction> UpdateAuction(string auctionId, AuctionDTO auctionDTO)
         {
+            _logger.LogInformation($"[*] UpdateAuction(string auctionId, AuctionDTO auctionDTO) called: Updating the auction with auctiondId {auctionId}");
+
             try
             {
-                _logger.LogInformation($"PUT auction called with ID: {id}");
-
-                Auction existingAuction = await _auctionCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
+                Auction existingAuction = await _auctionCollection.Find(x => x.AuctionID == auctionId).FirstOrDefaultAsync();
 
                 if (existingAuction == null)
                 {
-                    _logger.LogError($"Error finding auction: {id}");
+                    _logger.LogError($"Error finding auction: {auctionId}");
                 }
 
                 // Update the properties of the existing auction with the values from the DTO
@@ -225,15 +228,14 @@ namespace AuctionPlanningServiceAPI.Service
                 existingAuction.ArticleID = auctionDTO.ArticleID;
 
                 // Replace the existing auction in the database with the updated auction
-                await _auctionCollection.ReplaceOneAsync(x => x.AuctionID == id, existingAuction);
-
-                _logger.LogInformation($"Updated auction called with ID: {id}");
+                await _auctionCollection.ReplaceOneAsync(x => x.AuctionID == auctionId, existingAuction);
 
                 return existingAuction;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error in updateAuction: {ex.Message}");
+                _logger.LogError($"EXCEPTION CAUGHT: {ex.Message}");
+                
                 throw;
             }
         }
