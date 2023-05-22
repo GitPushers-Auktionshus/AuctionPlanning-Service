@@ -35,6 +35,8 @@ public class AuctionPlanningController : ControllerBase
     [HttpPost("addAuction")]
     public async Task<Auction> AddAuction(AuctionDTO auctionDTO)
     {
+        _logger.LogInformation($"[POST] addAuction endpoint reached");
+
         return await _service.AddAuction(auctionDTO);
     }
 
@@ -42,6 +44,8 @@ public class AuctionPlanningController : ControllerBase
     [HttpGet("getAll")]
     public async Task<List<Auction>> GetAllAuctions()
     {
+        _logger.LogInformation($"[GET] getAll endpoint reached");
+
         return await _service.GetAllAuctions();
     }
 
@@ -49,30 +53,38 @@ public class AuctionPlanningController : ControllerBase
     [HttpGet("categories/{categoryCode}")]
     public async Task<List<Category>> GetCategory(string categoryCode)
     {
+        _logger.LogInformation($"[GET] categories/{categoryCode} endpoint reached");
+
         return await _service.GetCategory(categoryCode);
     }
 
     //DELETE - Removes an auction
     [Authorize]
-    [HttpDelete("deleteAuction/{id}")]
-    public async Task<Auction> DeleteAuction(string id)
+    [HttpDelete("deleteAuction/{auctionId}")]
+    public async Task<Auction> DeleteAuction(string auctionId)
     {
-        return await _service.DeleteAuction(id);
+        _logger.LogInformation($"[DELETE] deleteAuction/{auctionId} endpoint reached");
+
+        return await _service.DeleteAuction(auctionId);
     }
 
     // GET - Retrieves an auction by ID
-    [HttpGet("getAuction/{id}")]
-    public async Task<Auction> GetAuction(string id)
+    [HttpGet("getAuction/{auctionId}")]
+    public async Task<Auction> GetAuction(string auctionId)
     {
-        return await _service.GetAuctionByID(id);
+        _logger.LogInformation($"[GET] getAuction/{auctionId} endpoint reached");
+
+        return await _service.GetAuctionByID(auctionId);
     }
 
     // PUT - Updates an auction
     [Authorize]
-    [HttpPut("updateAuction/{id}")]
-    public async Task<Auction> UpdateAuction(string id, AuctionDTO auctionDTO)
+    [HttpPut("updateAuction/{auctionId}")]
+    public async Task<Auction> UpdateAuction(string auctionId, AuctionDTO auctionDTO)
     {
-        return await _service.UpdateAuction(id, auctionDTO);
+        _logger.LogInformation($"[PUT] updateAuction/{auctionId} endpoint reached");
+
+        return await _service.UpdateAuction(auctionId, auctionDTO);
     }
 
 
