@@ -1,6 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
+using System.Security.Cryptography;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace AuctionPlanningServiceAPI.Model
@@ -19,6 +20,7 @@ namespace AuctionPlanningServiceAPI.Model
 
         public Auction()
         {
+
         }
     }
 }
