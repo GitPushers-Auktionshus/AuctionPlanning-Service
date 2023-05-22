@@ -148,7 +148,7 @@ namespace AuctionPlanningServiceAPI.Service
 
         }
 
-        //GET - Return a list of all auctions
+        //GET - Return a list of all categories matching a given categorycode
         public async Task<List<Category>> GetCategory(string categoryCode)
         {
             _logger.LogInformation($"getCategory endpoint called");
