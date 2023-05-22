@@ -17,6 +17,7 @@ namespace AuctionPlanningServiceAPI.Model
         public DateTime EndDate { get; set; }
         public int Views { get; set; }
         public Article Article { get; set; }
+        public List<Comment> Comments { get; set; }
 
         public Auction()
         {

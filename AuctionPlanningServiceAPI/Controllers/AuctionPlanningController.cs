@@ -46,7 +46,7 @@ public class AuctionPlanningController : ControllerBase
     }
 
     //GET - Return a list of all auctions
-    [HttpGet("categories/{categoryCode")]
+    [HttpGet("categories/{categoryCode}")]
     public async Task<List<Category>> GetCategory(string categoryCode)
     {
         return await _service.GetCategory(categoryCode);

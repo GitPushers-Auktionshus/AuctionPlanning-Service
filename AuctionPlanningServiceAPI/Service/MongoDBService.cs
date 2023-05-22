@@ -176,6 +176,7 @@ namespace AuctionPlanningServiceAPI.Service
                             AuctionDate = auction.StartDate
                         };
 
+                        _logger.LogInformation($"New category added to list: Code: {newcategory.CategoryCode}, Name: {newcategory.CategoryName}, Description: {newcategory.ItemDescription}, AuctionDate: {newcategory.AuctionDate}");
                         categories.Add(newcategory);
                     }
                 }
