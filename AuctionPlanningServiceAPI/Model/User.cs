@@ -17,7 +17,7 @@ namespace AuctionPlanningServiceAPI.Model
         public string? Phone { get; set; }
         public string? Email { get; set; }
         public bool Verified { get; set; }
-        public double Rating { get; set; }
+        public float Rating { get; set; }
 
         public User()
         {

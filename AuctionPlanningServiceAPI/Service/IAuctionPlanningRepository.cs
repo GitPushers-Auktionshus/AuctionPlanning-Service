@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AuctionPlanningServiceAPI.Service
 {
-
     public interface IAuctionPlanningRepository
     {
         public Task<Auction> AddAuction(AuctionDTO auctionDTO);
