@@ -23,11 +23,11 @@ namespace AuctionPlanningServiceAPI.Service
         private readonly string _auctionsDatabase;
         private readonly string _inventoryDatabase;
 
-        private readonly string _auctionCollectionName;
+        private readonly string _listingsCollectionName;
         private readonly string _articleCollectionName;
 
 
-        private readonly IMongoCollection<Auction> _auctionCollection;
+        private readonly IMongoCollection<Auction> _listingsCollection;
         private readonly IMongoCollection<Article> _articleCollection;
 
         public MongoDBService(ILogger<AuctionPlanningController> logger, IConfiguration config, EnviromentVariables vaultSecrets)
@@ -42,14 +42,14 @@ namespace AuctionPlanningServiceAPI.Service
 
                 // Retrieves Auction database and collections
                 _auctionsDatabase = config["AuctionsDatabase"] ?? "Auctionsdatabase missing";
-                _auctionCollectionName = config["AuctionCollection"] ?? "Auctioncollection name missing";
+                _listingsCollectionName = config["AuctionCollection"] ?? "Auctioncollection name missing";
 
                 // Retrieves Inventory database and collection
                 _inventoryDatabase = config["InventoryDatabase"] ?? "Inventorydatabase missing";
                 _articleCollectionName = config["ArticleCollection"] ?? "Articlecollection name missing";
 
                 _logger.LogInformation($"AuctionService secrets: ConnectionURI: {_connectionURI}");
-                _logger.LogInformation($"AuctionService Database and Collections: Auctiondatabase: {_auctionsDatabase}, Auctionsdatabase: {_auctionCollectionName}");
+                _logger.LogInformation($"AuctionService Database and Collections: Auctiondatabase: {_auctionsDatabase}, Auctionsdatabase: {_listingsCollectionName}");
                 _logger.LogInformation($"Inventory Database and Collections: Inventorydatabase: {_auctionsDatabase}, Articlecollection: {_articleCollectionName}");
 
             }
@@ -70,7 +70,7 @@ namespace AuctionPlanningServiceAPI.Service
                 var inventoryDatabase = mongoClient.GetDatabase(_inventoryDatabase);
 
                 // Collections
-                _auctionCollection = auctionsDatabase.GetCollection<Auction>(_auctionCollectionName);
+                _listingsCollection = auctionsDatabase.GetCollection<Auction>(_listingsCollectionName);
                 _articleCollection = inventoryDatabase.GetCollection<Article>(_articleCollectionName);
             }
             catch (Exception ex)
@@ -109,7 +109,7 @@ namespace AuctionPlanningServiceAPI.Service
                         Article = auctionArticle,
                     };
 
-                    await _auctionCollection.InsertOneAsync(auction);
+                    await _listingsCollection.InsertOneAsync(auction);
 
                     return auction;
                 }
@@ -130,7 +130,7 @@ namespace AuctionPlanningServiceAPI.Service
             {
                 List<Auction> allAuctions = new List<Auction>();
 
-                allAuctions = await _auctionCollection.Find(_ => true).ToListAsync<Auction>();
+                allAuctions = await _listingsCollection.Find(_ => true).ToListAsync<Auction>();
 
                 if (allAuctions == null)
                 {
@@ -147,6 +147,50 @@ namespace AuctionPlanningServiceAPI.Service
             }
 
         }
+
+        //GET - Return a list of all auctions
+        public async Task<List<Category>> GetCategory(string categoryCode)
+        {
+            _logger.LogInformation($"getCategory endpoint called");
+
+            try
+            {
+                List<Auction> auctions = new List<Auction>();
+                List<Category> categories = new List<Category>();
+
+                auctions = await _listingsCollection.Find(x => x.Article.Category == categoryCode).ToListAsync<Auction>();
+
+                if (categories == null)
+                {
+                    _logger.LogInformation($"No auctions found with categoryCode {categoryCode}");
+                }
+                else
+                {
+                    foreach (var auction in auctions)
+                    {
+                        Category newcategory = new Category
+                        {
+                            CategoryCode = categoryCode,
+                            CategoryName = auction.Article.Name,
+                            ItemDescription = auction.Article.Description,
+                            AuctionDate = auction.StartDate
+                        };
+
+                        categories.Add(newcategory);
+                    }
+                }
+
+                return categories;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed calling getCategory: {ex.Message}");
+
+                throw;
+            }
+
+        }
+
         //DELETE - Removes an auction
         public async Task<Auction> DeleteAuction(string id)
         {
@@ -156,7 +200,7 @@ namespace AuctionPlanningServiceAPI.Service
 
                 Auction deleteAuction = new Auction();
 
-                deleteAuction = await _auctionCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
+                deleteAuction = await _listingsCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
 
                 if (deleteAuction == null)
                 {
@@ -168,7 +212,7 @@ namespace AuctionPlanningServiceAPI.Service
                 {
                     FilterDefinition<Auction> filter = Builders<Auction>.Filter.Eq("AuctionID", id);
 
-                    await _auctionCollection.DeleteOneAsync(filter);
+                    await _listingsCollection.DeleteOneAsync(filter);
 
                     _logger.LogInformation($"id got deleted: {id}");
 
@@ -191,7 +235,7 @@ namespace AuctionPlanningServiceAPI.Service
             {
                 _logger.LogInformation($"GET auction called with ID: {id}");
 
-                Auction auction = await _auctionCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
+                Auction auction = await _listingsCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
 
                 if (auction == null)
                 {
@@ -218,7 +262,7 @@ namespace AuctionPlanningServiceAPI.Service
             {
                 _logger.LogInformation($"PUT auction called with ID: {id}");
 
-                Auction existingAuction = await _auctionCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
+                Auction existingAuction = await _listingsCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
 
                 if (existingAuction == null)
                 {
@@ -241,7 +285,7 @@ namespace AuctionPlanningServiceAPI.Service
                 existingAuction.Article = article;
 
                 // Replace the existing auction in the database with the updated auction
-                await _auctionCollection.ReplaceOneAsync(x => x.AuctionID == id, existingAuction);
+                await _listingsCollection.ReplaceOneAsync(x => x.AuctionID == id, existingAuction);
 
                 return existingAuction;
             }

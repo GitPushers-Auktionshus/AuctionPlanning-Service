@@ -11,6 +11,8 @@ namespace AuctionPlanningServiceAPI.Service
 
         public Task<List<Auction>> GetAllAuctions();
 
+        public Task<List<Category>> GetCategory(string categoryCode);
+
         public Task<Auction> DeleteAuction(string id);
 
         public Task<Auction> GetAuctionByID(string id);

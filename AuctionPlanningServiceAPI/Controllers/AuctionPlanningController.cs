@@ -45,6 +45,13 @@ public class AuctionPlanningController : ControllerBase
         return await _service.GetAllAuctions();
     }
 
+    //GET - Return a list of all auctions
+    [HttpGet("categories/{categoryCode")]
+    public async Task<List<Category>> GetCategory(string categoryCode)
+    {
+        return await _service.GetCategory(categoryCode);
+    }
+
     //DELETE - Removes an auction
     [Authorize]
     [HttpDelete("deleteAuction/{id}")]
