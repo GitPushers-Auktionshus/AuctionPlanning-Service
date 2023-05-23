@@ -31,7 +31,7 @@ namespace AuctionPlanningServiceAPI.Service
         private readonly IMongoCollection<Auction> _listingsCollection;
         private readonly IMongoCollection<Article> _articleCollection;
 
-        public MongoDBService(ILogger<AuctionPlanningController> logger, IConfiguration config, EnviromentVariables vaultSecrets)
+        public MongoDBService(ILogger<AuctionPlanningController> logger, IConfiguration config, EnvVariables vaultSecrets)
         {
             _logger = logger;
             _config = config;
@@ -86,7 +86,7 @@ namespace AuctionPlanningServiceAPI.Service
         {
             try
             {
-                _logger.LogInformation($"POST: addAuction called, StartDate: {auctionDTO.StartDate}, EndDate: {auctionDTO.EndDate}, ArticleID: {auctionDTO.ArticleID}");
+                _logger.LogInformation($"[*] AddAuction(AuctionDTO auctionDTO) called: Adding a new auction to the database\nStartDate: {auctionDTO.StartDate}\nEndDate: {auctionDTO.EndDate}\nArticleID: {auctionDTO.ArticleID}");
 
                 Article auctionArticle = new Article();
 
@@ -121,7 +121,7 @@ namespace AuctionPlanningServiceAPI.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error in add auction: {ex.Message}");
+                _logger.LogError($"EXCEPTION CAUGHT: {ex.Message}");
 
                 throw;
             }
@@ -130,7 +130,7 @@ namespace AuctionPlanningServiceAPI.Service
         //GET - Return a list of all auctions
         public async Task<List<Auction>> GetAllAuctions()
         {
-            _logger.LogInformation($"getAll endpoint called");
+            _logger.LogInformation($"[*] GetAllAuctions() called: Fetching all auctions from the database");
 
             try
             {
@@ -148,7 +148,7 @@ namespace AuctionPlanningServiceAPI.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed calling getAllAuctions: {ex.Message}");
+                _logger.LogError($"EXCEPTION CAUGHT: {ex.Message}");
 
                 throw;
             }
@@ -212,7 +212,7 @@ namespace AuctionPlanningServiceAPI.Service
         //GET - Return a list of all categories matching a given categorycode
         public async Task<List<Category>> GetCategory(string categoryCode)
         {
-            _logger.LogInformation($"getCategory endpoint called");
+            _logger.LogInformation($"[*] GetCategory(string categoryCode) called: Fetching a list of items in the given category");
 
             try
             {
@@ -250,7 +250,7 @@ namespace AuctionPlanningServiceAPI.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed calling getCategory: {ex.Message}");
+                _logger.LogError($"EXCEPTION CAUGHT: {ex.Message}");
 
                 throw;
             }
@@ -258,17 +258,16 @@ namespace AuctionPlanningServiceAPI.Service
         }
 
         //DELETE - Removes an auction
-        public async Task<Auction> DeleteAuction(string id)
+        public async Task<Auction> DeleteAuction(string auctionId)
         {
             try
             {
-                _logger.LogInformation($"DeleteAuction called with Auction ID = {id}");
+                _logger.LogInformation($"[*] DeleteAuction(string auctionId) called: Deleting an auction with the auctionId: {auctionId}");
 
                 Auction deleteAuction = new Auction();
 
                 // Finds the auction matching the given Article ID in the listing collection
-                deleteAuction = await _listingsCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
-
+                deleteAuction = await _listingsCollection.Find(x => x.AuctionID == auctionId).FirstOrDefaultAsync();
 
                 if (deleteAuction == null)
                 {
@@ -279,19 +278,19 @@ namespace AuctionPlanningServiceAPI.Service
                 else
                 {
                     // Creates a filter, that filtes on the property "AuctionID" and matchin it with the given id in the request
-                    FilterDefinition<Auction> filter = Builders<Auction>.Filter.Eq("AuctionID", id);
+                    FilterDefinition<Auction> filter = Builders<Auction>.Filter.Eq("AuctionID", auctionId);
 
                     // Deletes the auction in the listing collection using the filter provided from above
                     await _listingsCollection.DeleteOneAsync(filter);
 
-                    _logger.LogInformation($"id got deleted: {id}");
+                    _logger.LogInformation($"id got deleted: {auctionId}");
 
                     return deleteAuction;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed while trying to deleteAuction: {ex.Message}");
+                _logger.LogError($"EXCEPTION CAUGHT: {ex.Message}");
 
                 throw;
             }
@@ -299,18 +298,18 @@ namespace AuctionPlanningServiceAPI.Service
         }
 
         // GET - Retrieves an auction by ID
-        public async Task<Auction> GetAuctionByID(string id)
+        public async Task<Auction> GetAuctionByID(string auctionId)
         {
+            _logger.LogInformation($"[*] GetAuctionByID(string auctionId) called: Fetching an auction with auctionId {auctionId}");
+
             try
             {
-                _logger.LogInformation($"GET auction called with ID: {id}");
-
                 // Find the auction in the listing collection based on the provided id
-                Auction auction = await _listingsCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
+                Auction auction = await _listingsCollection.Find(x => x.AuctionID == auctionId).FirstOrDefaultAsync();
 
                 if (auction == null)
                 {
-                    _logger.LogError($"Error finding auction: {id}");
+                    _logger.LogError($"Error finding auction: {auctionId}");
 
                     // Returns null if the auction isnt found
                     return null;
@@ -320,7 +319,7 @@ namespace AuctionPlanningServiceAPI.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error in getAuction: {ex.Message}");
+                _logger.LogError($"EXCEPTION CAUGHT: {ex.Message}");
                 throw;
             }
         }
@@ -328,18 +327,18 @@ namespace AuctionPlanningServiceAPI.Service
 
 
         // PUT - Updates an auction
-        public async Task<Auction> UpdateAuction(string id, AuctionDTO auctionDTO)
+        public async Task<Auction> UpdateAuction(string auctionId, AuctionDTO auctionDTO)
         {
+            _logger.LogInformation($"[*] UpdateAuction(string auctionId, AuctionDTO auctionDTO) called: Updating the action with auctionId: {auctionId}");
+
             try
             {
-                _logger.LogInformation($"PUT auction called with ID: {id}");
-
                 // Finds the auction to be updated in the listing collection using the provided ID
-                Auction existingAuction = await _listingsCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
+                Auction existingAuction = await _listingsCollection.Find(x => x.AuctionID == auctionId).FirstOrDefaultAsync();
 
                 if (existingAuction == null)
                 {
-                    _logger.LogError($"Error finding auction: {id}");
+                    _logger.LogError($"Error finding auction: {auctionId}");
 
                     return null;
                 }
@@ -359,13 +358,13 @@ namespace AuctionPlanningServiceAPI.Service
                 existingAuction.Article = article;
 
                 // Replace the existing auction in the database with the updated auction
-                await _listingsCollection.ReplaceOneAsync(x => x.AuctionID == id, existingAuction);
+                await _listingsCollection.ReplaceOneAsync(x => x.AuctionID == auctionId, existingAuction);
 
                 return existingAuction;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error in updateAuction: {ex.Message}");
+                _logger.LogError($"EXCEPTION CAUGHT: {ex.Message}");
 
                 throw;
             }
