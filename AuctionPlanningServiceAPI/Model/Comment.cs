@@ -7,7 +7,6 @@ namespace AuctionPlanningServiceAPI.Model
 {
 	public class Comment
 	{
-
         [BsonId]
         public string CommentID { get; set; }
         public string UserID { get; set; }
