@@ -18,6 +18,7 @@ namespace AuctionPlanningServiceAPI.Service
         private readonly ILogger<AuctionPlanningController> _logger;
         private readonly IConfiguration _config;
 
+        // Initializes enviroment variables
         private readonly string _connectionURI;
 
         private readonly string _auctionsDatabase;
@@ -26,7 +27,7 @@ namespace AuctionPlanningServiceAPI.Service
         private readonly string _listingsCollectionName;
         private readonly string _articleCollectionName;
 
-
+        // Initializes MongoDB database collection
         private readonly IMongoCollection<Auction> _listingsCollection;
         private readonly IMongoCollection<Article> _articleCollection;
 
@@ -89,8 +90,10 @@ namespace AuctionPlanningServiceAPI.Service
 
                 Article auctionArticle = new Article();
 
+                // Finds the article matching the article ID from the article DTO and adds it to an article object
                 auctionArticle = await _articleCollection.Find(x => x.ArticleID == auctionDTO.ArticleID).FirstOrDefaultAsync();
 
+                // Returns null if if can't find an article with the matching ID
                 if (auctionArticle == null)
                 {
                     _logger.LogInformation("Error finding article for auction");
@@ -98,6 +101,7 @@ namespace AuctionPlanningServiceAPI.Service
                 }
                 else
                 {
+                    // Creates an auction 
                     Auction auction = new Auction
                     {
                         AuctionID = ObjectId.GenerateNewId().ToString(),
@@ -109,6 +113,7 @@ namespace AuctionPlanningServiceAPI.Service
                         Article = auctionArticle,
                     };
 
+                    // Adds the auction to the listing collection
                     await _listingsCollection.InsertOneAsync(auction);
 
                     return auction;
@@ -121,6 +126,7 @@ namespace AuctionPlanningServiceAPI.Service
                 throw;
             }
         }
+
         //GET - Return a list of all auctions
         public async Task<List<Auction>> GetAllAuctions()
         {
@@ -130,6 +136,7 @@ namespace AuctionPlanningServiceAPI.Service
             {
                 List<Auction> allAuctions = new List<Auction>();
 
+                // Finds all documents in the listing collection and adds them to a list of auction objects
                 allAuctions = await _listingsCollection.Find(_ => true).ToListAsync<Auction>();
 
                 if (allAuctions == null)
@@ -148,6 +155,60 @@ namespace AuctionPlanningServiceAPI.Service
 
         }
 
+        //GET - Return a list of all active auctions
+        public async Task<List<Auction>> GetAllActiveAuctions()
+        {
+            _logger.LogInformation($"getAllActive endpoint called");
+
+            try
+            {
+                List<Auction> allAuctions = new List<Auction>();
+                List<Auction> activeAuctions = new List<Auction>();
+
+                // Finds all documents in the listing collection and adds them to a list of auction objects
+                allAuctions = await _listingsCollection.Find(_ => true).ToListAsync<Auction>();
+
+                if (allAuctions == null)
+                {
+                    _logger.LogInformation("No auctions found");
+
+                    return null;
+                }
+                else
+                {
+                    // Loops through all auctions in the list and adds the currently active ones to a new list
+                    foreach (var auction in allAuctions)
+                    {
+                        // Determines whether they're active or not based on the current date and time
+                        if (auction.StartDate <= DateTime.Now && auction.EndDate >= DateTime.Now)
+                        {
+                            activeAuctions.Add(auction);
+                        }
+                    }
+                    if (activeAuctions == null)
+                    {
+                        _logger.LogInformation("No active auctions found");
+
+                        return null;
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"{activeAuctions.Count} active auctions found");
+
+                        // Return a list of all active auctions added in the above foreach loop
+                        return activeAuctions;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed calling getAllActiveAuctions: {ex.Message}");
+
+                throw;
+            }
+
+        }
+
         //GET - Return a list of all categories matching a given categorycode
         public async Task<List<Category>> GetCategory(string categoryCode)
         {
@@ -158,6 +219,7 @@ namespace AuctionPlanningServiceAPI.Service
                 List<Auction> auctions = new List<Auction>();
                 List<Category> categories = new List<Category>();
 
+                // Finds all auctions matching the given catogory code and adds them to the auction list
                 auctions = await _listingsCollection.Find(x => x.Article.Category == categoryCode).ToListAsync<Auction>();
 
                 if (categories == null)
@@ -166,6 +228,7 @@ namespace AuctionPlanningServiceAPI.Service
                 }
                 else
                 {
+                    // Loops through all aucitons in the auctions list and creates Category objects from each single one
                     foreach (var auction in auctions)
                     {
                         Category newcategory = new Category
@@ -177,6 +240,8 @@ namespace AuctionPlanningServiceAPI.Service
                         };
 
                         _logger.LogInformation($"New category added to list: Code: {newcategory.CategoryCode}, Name: {newcategory.CategoryName}, Description: {newcategory.ItemDescription}, AuctionDate: {newcategory.AuctionDate}");
+
+                        // Adds each object to a list containing Category objects
                         categories.Add(newcategory);
                     }
                 }
@@ -201,7 +266,9 @@ namespace AuctionPlanningServiceAPI.Service
 
                 Auction deleteAuction = new Auction();
 
+                // Finds the auction matching the given Article ID in the listing collection
                 deleteAuction = await _listingsCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
+
 
                 if (deleteAuction == null)
                 {
@@ -211,8 +278,10 @@ namespace AuctionPlanningServiceAPI.Service
                 }
                 else
                 {
+                    // Creates a filter, that filtes on the property "AuctionID" and matchin it with the given id in the request
                     FilterDefinition<Auction> filter = Builders<Auction>.Filter.Eq("AuctionID", id);
 
+                    // Deletes the auction in the listing collection using the filter provided from above
                     await _listingsCollection.DeleteOneAsync(filter);
 
                     _logger.LogInformation($"id got deleted: {id}");
@@ -236,12 +305,14 @@ namespace AuctionPlanningServiceAPI.Service
             {
                 _logger.LogInformation($"GET auction called with ID: {id}");
 
+                // Find the auction in the listing collection based on the provided id
                 Auction auction = await _listingsCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
 
                 if (auction == null)
                 {
                     _logger.LogError($"Error finding auction: {id}");
 
+                    // Returns null if the auction isnt found
                     return null;
                 }
 
@@ -263,6 +334,7 @@ namespace AuctionPlanningServiceAPI.Service
             {
                 _logger.LogInformation($"PUT auction called with ID: {id}");
 
+                // Finds the auction to be updated in the listing collection using the provided ID
                 Auction existingAuction = await _listingsCollection.Find(x => x.AuctionID == id).FirstOrDefaultAsync();
 
                 if (existingAuction == null)
@@ -272,6 +344,7 @@ namespace AuctionPlanningServiceAPI.Service
                     return null;
                 }
 
+                // Finds the article in the article collection matching the article ID in the DTO
                 Article article = await _articleCollection.Find(x => x.ArticleID == auctionDTO.ArticleID).FirstOrDefaultAsync();
 
                 if (article == null)
