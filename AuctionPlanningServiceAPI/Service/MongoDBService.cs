@@ -84,10 +84,10 @@ namespace AuctionPlanningServiceAPI.Service
         // Adds an auction 
         public async Task<Auction> AddAuction(AuctionDTO auctionDTO)
         {
+            _logger.LogInformation($"[*] AddAuction(AuctionDTO auctionDTO) called: Adding a new auction to the database\nStartDate: {auctionDTO.StartDate}\nEndDate: {auctionDTO.EndDate}\nArticleID: {auctionDTO.ArticleID}");
+
             try
             {
-                _logger.LogInformation($"[*] AddAuction(AuctionDTO auctionDTO) called: Adding a new auction to the database\nStartDate: {auctionDTO.StartDate}\nEndDate: {auctionDTO.EndDate}\nArticleID: {auctionDTO.ArticleID}");
-
                 Article auctionArticle = new Article();
 
                 // Finds the article matching the article ID from the article DTO and adds it to an article object
@@ -97,7 +97,8 @@ namespace AuctionPlanningServiceAPI.Service
                 if (auctionArticle == null)
                 {
                     _logger.LogInformation("Error finding article for auction");
-                    return null;
+
+                    throw new Exception();
                 }
                 else
                 {

@@ -33,11 +33,20 @@ public class AuctionPlanningController : ControllerBase
     //POST - Adds a new auction
     [Authorize]
     [HttpPost("addAuction")]
-    public async Task<Auction> AddAuction(AuctionDTO auctionDTO)
+    public async Task<IActionResult> AddAuction(AuctionDTO auctionDTO)
     {
         _logger.LogInformation($"[POST] addAuction endpoint reached");
 
-        return await _service.AddAuction(auctionDTO);
+        try
+        {
+            Auction auction = await _service.AddAuction(auctionDTO);
+            return CreatedAtAction("GetAuction", new { auctionId = auction.AuctionID }, auction);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while adding a new auction.");
+            return BadRequest();
+        }
     }
 
     //GET - Return a list of all auctions
