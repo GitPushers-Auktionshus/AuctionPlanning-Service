@@ -112,6 +112,7 @@ namespace AuctionPlanningServiceAPI.Service
                         EndDate = auctionDTO.EndDate,
                         Views = 0,
                         Article = auctionArticle,
+                        Comments = new List<Comment>()
                     };
 
                     // Adds the auction to the listing collection
