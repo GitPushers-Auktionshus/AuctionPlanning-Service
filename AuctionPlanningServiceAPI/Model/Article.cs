@@ -14,11 +14,11 @@ namespace AuctionPlanningServiceAPI.Model
         public double EstimatedPrice { get; set; }
         public string? Description { get; set; }
         public List<Image> Images { get; set; }
-        public string? Category { get; set; }
+        public string Category { get; set; }
         public bool Sold { get; set; }
         public Auctionhouse Auctionhouse { get; set; }
         public User Seller { get; set; }
-        public float MinPrice { get; set; }
+        public double MinPrice { get; set; }
         public User Buyer { get; set; }
 
         public Article()
